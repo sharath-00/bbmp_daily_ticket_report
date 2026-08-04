@@ -485,16 +485,16 @@ class TicketEngine:
                 elif is_closed_t:
                     july1_closed_count += 1
 
-        # Unresolved Aging Analysis (> 7 Days & > 30 Days)
+        # Unresolved Aging Analysis (> 7 Days & > 30 Days) - Tickets from July 1 onwards
         unresolved_over_7_list = []
         unresolved_over_30_list = []
 
         for t in trend_source_tickets:
             st_lower = (t.get("status", "Open") or "Open").lower()
-            is_open_t = any(term in st_lower for term in ["open", "in progress", "pending", "assigned", "waiting"])
+            is_open_t = any(term in st_lower for term in ["open", "in progress", "pending", "assigned", "waiting"]) and not any(term in st_lower for term in ["closed", "duplicate"])
             if is_open_t:
                 t_date = self.parse_opened_date(t.get("ticket_opened_on", ""))
-                if t_date:
+                if t_date and t_date >= july1_date:
                     age_days = (today_date - t_date).days
                     t_enriched = dict(t)
                     t_enriched["days_unresolved"] = age_days
