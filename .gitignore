@@ -1,0 +1,13 @@
+# Environment variables
+.env
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Generated report output artifacts
+*.csv
+*.xlsx
+bbmp_email_report_preview.html
+summary_report.json

@@ -1,0 +1,96 @@
+name: BBMP Daily Ticket Analytics Email Report
+
+on:
+  schedule:
+    # Runs daily at 02:30 UTC (which is 8:00 AM IST)
+    - cron: '30 2 * * *'
+
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: "Report Period ('today', 'yesterday', 'all', or YYYY-MM-DD)"
+        required: false
+        default: "today"
+      dry_run:
+        description: "Dry Run (generate report preview without sending email)"
+        type: boolean
+        required: false
+        default: false
+      new_thread:
+        description: "Start a new email thread (ignore previous message threading)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  run-daily-report:
+    name: Generate & Dispatch Daily Ticket Analytics Email
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Daily Report Generator & Email Sender
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USE_TLS: ${{ secrets.SMTP_USE_TLS }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
+          EMAIL_SUBJECT_PREFIX: ${{ secrets.EMAIL_SUBJECT_PREFIX }}
+          DEFAULT_REPORT_PERIOD: ${{ secrets.DEFAULT_REPORT_PERIOD }}
+          THINGSBOARD_HOST: ${{ secrets.THINGSBOARD_HOST }}
+          THINGSBOARD_USERNAME: ${{ secrets.THINGSBOARD_USERNAME }}
+          THINGSBOARD_PASSWORD: ${{ secrets.THINGSBOARD_PASSWORD }}
+        run: |
+          CMD="python send_daily_report.py"
+
+          # Handle manual dispatch inputs
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.target_date }}" ]; then
+              CMD="$CMD --date \"${{ github.event.inputs.target_date }}\""
+            fi
+            if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+              CMD="$CMD --dry-run"
+            fi
+            if [ "${{ github.event.inputs.new_thread }}" = "true" ]; then
+              CMD="$CMD --new-thread"
+            fi
+          fi
+
+          echo "Running command: $CMD"
+          eval $CMD
+
+      - name: Commit & Push Email Thread State Updates
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add updated email thread state file or disk cache if changed
+          git add email_thread_state.json tickets_cache.json || true
+          
+          if git status --porcelain | grep -E "email_thread_state.json|tickets_cache.json"; then
+            echo "Changes detected in thread state or cache. Committing..."
+            git commit -m "auto: update email thread state and ticket cache [skip ci]"
+            git push
+          else
+            echo "No state changes to commit."
+          fi
