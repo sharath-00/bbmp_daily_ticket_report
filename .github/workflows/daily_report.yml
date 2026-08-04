@@ -2,8 +2,8 @@ name: BBMP Daily Ticket Analytics Email Report
 
 on:
   schedule:
-    # Runs daily at 02:30 UTC (which is 8:00 AM IST)
-    - cron: '30 2 * * *'
+    # Runs daily at 14:30 UTC (which is 8:00 PM IST)
+    - cron: '30 14 * * *'
 
   workflow_dispatch:
     inputs:
