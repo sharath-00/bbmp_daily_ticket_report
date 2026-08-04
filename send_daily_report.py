@@ -61,16 +61,15 @@ def generate_reports_attachments(analytics: dict, filtered_tickets: list, all_co
             
         enriched_filtered.append(t_copy)
 
-    # Build list of ALL active open fault tickets across system from July 1 onwards (excluding Auto & Closed)
+    # Build list of ALL active open fault tickets across system from the starting (excluding Auto & Closed)
     all_open_faults = []
-    july1_date = date(2026, 7, 1)
     for t in source_all_tickets:
         st_lower = (t.get("status", "Open") or "Open").lower()
         is_open_t = any(term in st_lower for term in ["open", "in progress", "pending", "assigned", "waiting"]) and not any(term in st_lower for term in ["closed", "duplicate"])
         if is_open_t:
+            t_copy = dict(t)
             t_date = engine.parse_opened_date(t.get("ticket_opened_on", ""))
-            if t_date and t_date >= july1_date:
-                t_copy = dict(t)
+            if t_date:
                 age = (today_date - t_date).days
                 t_copy["days_unresolved"] = age
                 if age > 30:
@@ -79,7 +78,10 @@ def generate_reports_attachments(analytics: dict, filtered_tickets: list, all_co
                     t_copy["aging_category"] = "7 - 30 Days"
                 else:
                     t_copy["aging_category"] = "< 7 Days"
-                all_open_faults.append(t_copy)
+            else:
+                t_copy["days_unresolved"] = 0
+                t_copy["aging_category"] = "< 7 Days"
+            all_open_faults.append(t_copy)
 
     # Sort all open faults by longest pending age descending
     all_open_faults.sort(key=lambda x: x.get("days_unresolved", 0) if isinstance(x.get("days_unresolved"), int) else -1, reverse=True)
