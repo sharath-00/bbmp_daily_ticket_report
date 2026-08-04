@@ -24,21 +24,22 @@ def write_tickets_to_openpyxl_sheet(ws, tickets_list, headers):
         row = [t.get(h, "") for h in headers]
         ws.append(row)
 
-def generate_reports_attachments(analytics: dict, filtered_tickets: list) -> list:
-    """Export all tickets and unresolved aging reports into ONE single multi-tab Excel Workbook attachment."""
-    if not filtered_tickets:
+def generate_reports_attachments(analytics: dict, filtered_tickets: list, all_context_tickets: list = None) -> list:
+    """Export itemized tickets, all active open faults, and unresolved aging reports into ONE single multi-tab Excel Workbook attachment."""
+    source_all_tickets = all_context_tickets if all_context_tickets is not None else filtered_tickets
+    if not source_all_tickets and not filtered_tickets:
         logger.warning("No tickets to export to report attachments.")
         return []
 
     today_date = date.today()
     attachments = []
 
-    # Enrich tickets with aging metadata
-    enriched_tickets = []
+    # Enrich filtered tickets with aging metadata
+    enriched_filtered = []
     for t in filtered_tickets:
         t_copy = dict(t)
         st_lower = (t.get("status", "Open") or "Open").lower()
-        is_open_t = any(term in st_lower for term in ["open", "in progress", "pending", "assigned", "waiting"])
+        is_open_t = any(term in st_lower for term in ["open", "in progress", "pending", "assigned", "waiting"]) and not any(term in st_lower for term in ["closed", "duplicate"])
         t_date = engine.parse_opened_date(t.get("ticket_opened_on", ""))
         
         if is_open_t and t_date:
@@ -53,12 +54,37 @@ def generate_reports_attachments(analytics: dict, filtered_tickets: list) -> lis
             else:
                 t_copy["aging_category"] = "< 7 Days"
         else:
-            t_copy["days_unresolved"] = "N/A (Closed)"
-            t_copy["aging_category"] = "Closed"
+            t_copy["days_unresolved"] = "N/A (Closed)" if not is_open_t else "N/A"
+            t_copy["aging_category"] = "Closed" if not is_open_t else "< 7 Days"
             t_copy["unresolved_over_7_days"] = "NO"
             t_copy["unresolved_over_30_days"] = "NO"
             
-        enriched_tickets.append(t_copy)
+        enriched_filtered.append(t_copy)
+
+    # Build list of ALL active open fault tickets across system (excluding Auto & Closed)
+    all_open_faults = []
+    for t in source_all_tickets:
+        st_lower = (t.get("status", "Open") or "Open").lower()
+        is_open_t = any(term in st_lower for term in ["open", "in progress", "pending", "assigned", "waiting"]) and not any(term in st_lower for term in ["closed", "duplicate"])
+        if is_open_t:
+            t_copy = dict(t)
+            t_date = engine.parse_opened_date(t.get("ticket_opened_on", ""))
+            if t_date:
+                age = (today_date - t_date).days
+                t_copy["days_unresolved"] = age
+                if age > 30:
+                    t_copy["aging_category"] = "> 30 Days"
+                elif age > 7:
+                    t_copy["aging_category"] = "7 - 30 Days"
+                else:
+                    t_copy["aging_category"] = "< 7 Days"
+            else:
+                t_copy["days_unresolved"] = 0
+                t_copy["aging_category"] = "< 7 Days"
+            all_open_faults.append(t_copy)
+
+    # Sort all open faults by longest pending age descending
+    all_open_faults.sort(key=lambda x: x.get("days_unresolved", 0) if isinstance(x.get("days_unresolved"), int) else -1, reverse=True)
 
     unresolved_over_7 = analytics.get("unresolved_over_7_days_tickets", [])
     unresolved_over_30 = analytics.get("unresolved_over_30_days_tickets", [])
@@ -82,17 +108,22 @@ def generate_reports_attachments(analytics: dict, filtered_tickets: list) -> lis
         import openpyxl
         wb = openpyxl.Workbook()
         
-        # Sheet 1: All Tickets
+        # Sheet 1: Selected Period Tickets (or All Tickets)
         ws_all = wb.active
-        ws_all.title = "All Tickets"
-        write_tickets_to_openpyxl_sheet(ws_all, enriched_tickets, headers)
+        ws_all.title = "All Tickets" if len(enriched_filtered) == len(source_all_tickets) else "Period Tickets"
+        write_tickets_to_openpyxl_sheet(ws_all, enriched_filtered, headers)
 
-        # Sheet 2: Unresolved > 7 Days (without redundant F, G, H columns)
+        # Sheet 2: All Active Open Faults
+        if all_open_faults:
+            ws_open = wb.create_sheet(title=f"All Open Faults ({len(all_open_faults)})")
+            write_tickets_to_openpyxl_sheet(ws_open, all_open_faults, unresolved_headers)
+
+        # Sheet 3: Unresolved > 7 Days
         if unresolved_over_7:
             ws_u7 = wb.create_sheet(title=f"Unresolved > 7 Days ({len(unresolved_over_7)})")
             write_tickets_to_openpyxl_sheet(ws_u7, unresolved_over_7, unresolved_headers)
 
-        # Sheet 3: Unresolved > 30 Days (without redundant F, G, H columns)
+        # Sheet 4: Unresolved > 30 Days
         if unresolved_over_30:
             ws_u30 = wb.create_sheet(title=f"Unresolved > 30 Days ({len(unresolved_over_30)})")
             write_tickets_to_openpyxl_sheet(ws_u30, unresolved_over_30, unresolved_headers)
@@ -108,7 +139,7 @@ def generate_reports_attachments(analytics: dict, filtered_tickets: list) -> lis
             with open(main_csv, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=headers, extrasaction="ignore")
                 writer.writeheader()
-                writer.writerows(enriched_tickets)
+                writer.writerows(enriched_filtered)
             attachments.append(main_csv)
         except Exception as csv_err:
             logger.error(f"Error writing fallback CSV: {csv_err}")
@@ -177,8 +208,8 @@ def main():
 
     # 4. Generate Attachments (Excel + CSVs)
     report_attachments = []
-    if not args.no_csv and filtered_tickets:
-        report_attachments = generate_reports_attachments(analytics, filtered_tickets)
+    if not args.no_csv:
+        report_attachments = generate_reports_attachments(analytics, filtered_tickets, all_context_tickets=tickets)
 
     # 5. Generate HTML Email Dashboard
     html_dashboard = generate_html_email_report(analytics, date_label=date_label)
