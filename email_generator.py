@@ -284,6 +284,36 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                             </td>
                         </tr>
 
+                        <!-- Unresolved Fault Aging Overview (> 7 Days & > 30 Days) -->
+                        <tr>
+                            <td style="padding: 16px 32px; background-color: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                                <div style="font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                                    Unresolved Fault Aging Overview
+                                </div>
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <!-- Unresolved > 7 Days Card -->
+                                        <td width="50%" style="padding: 4px;">
+                                            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px; text-align: center;">
+                                                <div style="font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.5px;">Unresolved > 7 Days</div>
+                                                <div style="font-size: 24px; font-weight: 800; color: #d97706; margin: 4px 0;">{u7_count} <span style="font-size: 13px; font-weight: 600;">Tickets</span></div>
+                                                <div style="font-size: 10px; color: #92400e; font-weight: 600;">Action Required (&gt; 7 Days Pending)</div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Unresolved > 30 Days Card -->
+                                        <td width="50%" style="padding: 4px;">
+                                            <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 10px; padding: 14px; text-align: center;">
+                                                <div style="font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">Unresolved > 30 Days (Critical)</div>
+                                                <div style="font-size: 24px; font-weight: 800; color: #dc2626; margin: 4px 0;">{u30_count} <span style="font-size: 13px; font-weight: 600;">Tickets</span></div>
+                                                <div style="font-size: 10px; color: #991b1b; font-weight: 700;">Critical Escalation Required (&gt; 30 Days Pending)</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+
                         <!-- Section: Zone-Wise Breakdown -->
                         <tr>
                             <td style="padding: 24px 32px;">
