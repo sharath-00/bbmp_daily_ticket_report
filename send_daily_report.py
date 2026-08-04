@@ -10,6 +10,7 @@ import os
 import sys
 import logging
 from datetime import datetime, date, timedelta
+import openpyxl
 from config import Config
 from ticket_engine import engine
 from email_generator import generate_html_email_report
