@@ -108,5 +108,34 @@ class TestTicketEngine(unittest.TestCase):
         self.assertIn("System", analytics["complainee_breakdown"])
         self.assertNotIn("Auto", analytics["complainee_breakdown"])
 
+    def test_unresolved_aging_separation(self):
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        t_5_days = (now - timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S")
+        t_15_days = (now - timedelta(days=15)).strftime("%Y-%m-%d %H:%M:%S")
+        t_45_days = (now - timedelta(days=45)).strftime("%Y-%m-%d %H:%M:%S")
+
+        aging_tickets = [
+            {"ticket_id": "T5", "status": "Open", "ticket_opened_on": t_5_days, "complainee": "User", "region": "EAST"},
+            {"ticket_id": "T15", "status": "Open", "ticket_opened_on": t_15_days, "complainee": "User", "region": "EAST"},
+            {"ticket_id": "T45", "status": "Open", "ticket_opened_on": t_45_days, "complainee": "User", "region": "EAST"},
+        ]
+
+        analytics = self.engine.analyze_tickets(aging_tickets)
+        
+        u7_30_ids = [t["ticket_id"] for t in analytics["unresolved_7_to_30_days_tickets"]]
+        u30_ids = [t["ticket_id"] for t in analytics["unresolved_over_30_days_tickets"]]
+
+        self.assertIn("T15", u7_30_ids)
+        self.assertNotIn("T45", u7_30_ids, "Tickets > 30 days must NOT be in 7-30 days list")
+        self.assertNotIn("T5", u7_30_ids)
+
+        self.assertIn("T45", u30_ids)
+        self.assertNotIn("T15", u30_ids)
+        self.assertNotIn("T5", u30_ids)
+
+        self.assertEqual(analytics["unresolved_7_to_30_days_count"], 1)
+        self.assertEqual(analytics["unresolved_over_30_days_count"], 1)
+
 if __name__ == "__main__":
     unittest.main()

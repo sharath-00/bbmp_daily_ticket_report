@@ -485,8 +485,8 @@ class TicketEngine:
                 elif is_closed_t:
                     july1_closed_count += 1
 
-        # Unresolved Aging Analysis (> 7 Days & > 30 Days) - All historical open tickets from the starting
-        unresolved_over_7_list = []
+        # Unresolved Aging Analysis (7 - 30 Days & > 30 Days) - All historical open tickets from the starting
+        unresolved_7_to_30_list = []
         unresolved_over_30_list = []
 
         for t in trend_source_tickets:
@@ -501,15 +501,14 @@ class TicketEngine:
                     if age_days > 30:
                         t_enriched["aging_category"] = "> 30 Days"
                         unresolved_over_30_list.append(t_enriched)
-                        unresolved_over_7_list.append(t_enriched)
                     elif age_days > 7:
                         t_enriched["aging_category"] = "7 - 30 Days"
-                        unresolved_over_7_list.append(t_enriched)
+                        unresolved_7_to_30_list.append(t_enriched)
                     else:
                         t_enriched["aging_category"] = "< 7 Days"
 
         # Sort by longest pending first
-        unresolved_over_7_list.sort(key=lambda x: x.get("days_unresolved", 0), reverse=True)
+        unresolved_7_to_30_list.sort(key=lambda x: x.get("days_unresolved", 0), reverse=True)
         unresolved_over_30_list.sort(key=lambda x: x.get("days_unresolved", 0), reverse=True)
 
         resolution_rate = round((closed_count / total_raised * 100), 2) if total_raised > 0 else 0.0
@@ -541,10 +540,12 @@ class TicketEngine:
             "july1_open_lamps": july1_open_lamps,
             "july1_closed_tickets": july1_closed_count,
             "july1_resolution_rate_percent": july1_res_rate,
-            "unresolved_over_7_days_count": len(unresolved_over_7_list),
+            "unresolved_7_to_30_days_count": len(unresolved_7_to_30_list),
             "unresolved_over_30_days_count": len(unresolved_over_30_list),
-            "unresolved_over_7_days_tickets": unresolved_over_7_list,
+            "unresolved_7_to_30_days_tickets": unresolved_7_to_30_list,
             "unresolved_over_30_days_tickets": unresolved_over_30_list,
+            "unresolved_over_7_days_count": len(unresolved_7_to_30_list),
+            "unresolved_over_7_days_tickets": unresolved_7_to_30_list,
             "status_breakdown": status_counts,
             "zone_breakdown": sorted_zones,
             "complainee_breakdown": sorted_complainees,

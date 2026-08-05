@@ -87,7 +87,7 @@ def generate_reports_attachments(analytics: dict, filtered_tickets: list, all_co
     # Sort all open faults by longest pending age descending
     all_open_faults.sort(key=lambda x: x.get("days_unresolved", 0) if isinstance(x.get("days_unresolved"), int) else -1, reverse=True)
 
-    unresolved_over_7 = analytics.get("unresolved_over_7_days_tickets", [])
+    unresolved_7_to_30 = analytics.get("unresolved_7_to_30_days_tickets", analytics.get("unresolved_over_7_days_tickets", []))
     unresolved_over_30 = analytics.get("unresolved_over_30_days_tickets", [])
 
     headers = [
@@ -119,10 +119,10 @@ def generate_reports_attachments(analytics: dict, filtered_tickets: list, all_co
             ws_open = wb.create_sheet(title=f"All Open Faults ({len(all_open_faults)})")
             write_tickets_to_openpyxl_sheet(ws_open, all_open_faults, unresolved_headers)
 
-        # Sheet 3: Unresolved > 7 Days
-        if unresolved_over_7:
-            ws_u7 = wb.create_sheet(title=f"Unresolved > 7 Days ({len(unresolved_over_7)})")
-            write_tickets_to_openpyxl_sheet(ws_u7, unresolved_over_7, unresolved_headers)
+        # Sheet 3: Unresolved 7 to 30 Days
+        if unresolved_7_to_30:
+            ws_u7 = wb.create_sheet(title=f"Unresolved 7 to 30 Days ({len(unresolved_7_to_30)})")
+            write_tickets_to_openpyxl_sheet(ws_u7, unresolved_7_to_30, unresolved_headers)
 
         # Sheet 4: Unresolved > 30 Days
         if unresolved_over_30:
@@ -253,7 +253,7 @@ def main():
         print(f" July 1 Closed      : {analytics.get('july1_closed_tickets', 0)}")
         print(f" July 1 Res Rate    : {analytics.get('july1_resolution_rate_percent', 0.0)}%")
         print("-" * 60)
-        print(f" Unresolved > 7 Days: {analytics.get('unresolved_over_7_days_count', 0)} Tickets")
+        print(f" Unresolved 7-30 Days: {analytics.get('unresolved_7_to_30_days_count', 0)} Tickets")
         print(f" Unresolved > 30 Days: {analytics.get('unresolved_over_30_days_count', 0)} Tickets (Critical)")
         print("-" * 60)
         print(f" Attachments        : {len(report_attachments)} files generated")

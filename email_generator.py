@@ -26,7 +26,7 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
     july1_closed = analytics.get("july1_closed_tickets", 0)
     july1_res_rate = analytics.get("july1_resolution_rate_percent", 0.0)
     
-    u7_count = analytics.get("unresolved_over_7_days_count", 0)
+    u7_30_count = analytics.get("unresolved_7_to_30_days_count", analytics.get("unresolved_over_7_days_count", 0))
     u30_count = analytics.get("unresolved_over_30_days_count", 0)
     u30_tickets = analytics.get("unresolved_over_30_days_tickets", [])
 
@@ -292,12 +292,12 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                                 </div>
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
-                                        <!-- Unresolved > 7 Days Card -->
+                                        <!-- Unresolved 7 - 30 Days Card -->
                                         <td width="50%" style="padding: 4px;">
                                             <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 14px; text-align: center;">
-                                                <div style="font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.5px;">Unresolved > 7 Days</div>
-                                                <div style="font-size: 24px; font-weight: 800; color: #d97706; margin: 4px 0;">{u7_count} <span style="font-size: 13px; font-weight: 600;">Tickets</span></div>
-                                                <div style="font-size: 10px; color: #92400e; font-weight: 600;">Action Required (&gt; 7 Days Pending)</div>
+                                                <div style="font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.5px;">Unresolved 7 - 30 Days</div>
+                                                <div style="font-size: 24px; font-weight: 800; color: #d97706; margin: 4px 0;">{u7_30_count} <span style="font-size: 13px; font-weight: 600;">Tickets</span></div>
+                                                <div style="font-size: 10px; color: #92400e; font-weight: 600;">Action Required (7 - 30 Days Pending)</div>
                                             </div>
                                         </td>
 
