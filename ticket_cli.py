@@ -8,6 +8,7 @@ import json
 import csv
 import sys
 from ticket_engine import engine
+from config import Config
 
 def print_summary_report(analytics: dict, date_info: str):
     print("\n" + "=" * 65)
@@ -55,7 +56,7 @@ def print_summary_report(analytics: dict, date_info: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch and analyze daily ticket data from Firestore.")
-    parser.add_argument("-d", "--date", type=str, default="all", help="Target date ('today', 'yesterday', 'YYYY-MM-DD', or 'all')")
+    parser.add_argument("-d", "--date", type=str, default=Config.DEFAULT_REPORT_PERIOD, help="Target date ('today', 'yesterday', 'YYYY-MM-DD', or 'all')")
     parser.add_argument("--start-date", type=str, help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end-date", type=str, help="End date (YYYY-MM-DD)")
     parser.add_argument("-z", "--zone", type=str, help="Filter by specific Zone")
