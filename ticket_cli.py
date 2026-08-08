@@ -65,11 +65,13 @@ def main():
     parser.add_argument("--list", action="store_true", help="Print detailed ticket list in terminal")
     parser.add_argument("-e", "--export", type=str, help="Path to export report (JSON or CSV)")
     parser.add_argument("--full", action="store_true", help="Include full raw tickets list in JSON export (default is analytics summary only)")
-    parser.add_argument("--refresh", action="store_true", help="Force refresh live ticket data directly from Firestore")
+    parser.add_argument("--use-cache", action="store_true", help="Use local disk cache instead of fetching live data from Firestore")
+    parser.add_argument("--refresh", action="store_true", help="Force refresh live ticket data directly from Firestore (default)")
 
     args = parser.parse_args()
 
-    tickets = engine.fetch_tickets(limit=args.limit, force_refresh=args.refresh)
+    force_refresh = not args.use_cache
+    tickets = engine.fetch_tickets(limit=args.limit, force_refresh=force_refresh)
     filtered = engine.filter_tickets(
         tickets,
         target_date=args.date,

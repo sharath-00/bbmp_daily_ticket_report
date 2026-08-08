@@ -128,7 +128,7 @@ class TicketEngine:
                     ts = data.get("timestamp")
                     if ts:
                         self._last_fetch_time = datetime.fromisoformat(ts)
-                    logger.info(f"Loaded {len(self._cached_tickets)} ticket records from disk cache '{self._cache_file}'.")
+                    logger.debug(f"Loaded {len(self._cached_tickets)} ticket records from disk cache '{self._cache_file}'.")
         except Exception as e:
             logger.warning(f"Could not load disk cache: {e}")
 
