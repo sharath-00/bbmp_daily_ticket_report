@@ -12,7 +12,7 @@ import logging
 from datetime import datetime, date, timedelta
 import openpyxl
 from config import Config
-from ticket_engine import engine
+from ticket_engine import engine, is_lamp_ticket
 from email_generator import generate_html_email_report
 from mail_sender import EmailSender
 
@@ -26,8 +26,12 @@ def write_tickets_to_openpyxl_sheet(ws, tickets_list, headers):
         ws.append(row)
 
 def generate_reports_attachments(analytics: dict, filtered_tickets: list, all_context_tickets: list = None) -> list:
-    """Export itemized tickets, all active open faults, and unresolved aging reports into ONE single multi-tab Excel Workbook attachment."""
+    """Export itemized tickets, all active open faults, and unresolved aging reports into ONE single multi-tab Excel Workbook attachment (Lamp Tickets Only)."""
+    # Ensure all tickets exported to Excel are strictly Lamp tickets
+    filtered_tickets = [t for t in filtered_tickets if is_lamp_ticket(t)]
     source_all_tickets = all_context_tickets if all_context_tickets is not None else filtered_tickets
+    source_all_tickets = [t for t in source_all_tickets if is_lamp_ticket(t)]
+
     if not source_all_tickets and not filtered_tickets:
         logger.warning("No tickets to export to report attachments.")
         return []
@@ -243,13 +247,13 @@ def main():
         logger.info("Dry-run mode active. Email was not dispatched.")
         print("\n" + "=" * 60)
         print("          DRY-RUN SUMMARY REPORT")
-        print("          (Automated 'Auto' tickets excluded)")
+        print("          (SLC Panels & Automated 'Auto' tickets excluded)")
         print("=" * 60)
         print(f" Period             : {date_label}")
         print(f" Subject Line       : {subject}")
         print(f" Thread Status      : {'Replying to thread (' + str(in_reply_to) + ')' if in_reply_to else 'New Thread'}")
         print(f" July 1 Raised      : {analytics.get('july1_total_tickets', 0)}")
-        print(f" July 1 Open        : {analytics.get('july1_open_tickets', 0)} ({analytics.get('july1_open_slc_panels', 0)} SLC Panels, {analytics.get('july1_open_lamps', 0)} Lamps)")
+        print(f" July 1 Open        : {analytics.get('july1_open_tickets', 0)} (Lamp Tickets)")
         print(f" July 1 Closed      : {analytics.get('july1_closed_tickets', 0)}")
         print(f" July 1 Res Rate    : {analytics.get('july1_resolution_rate_percent', 0.0)}%")
         print("-" * 60)

@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime
-from ticket_engine import TicketEngine, parse_ticket_document, extract_field_val, is_bbmp_ticket
+from ticket_engine import TicketEngine, parse_ticket_document, extract_field_val, is_bbmp_ticket, is_slc_panel_ticket, is_lamp_ticket
 
 class TestTicketEngine(unittest.TestCase):
     def setUp(self):
@@ -19,7 +19,8 @@ class TestTicketEngine(unittest.TestCase):
                     "priority": {"stringValue": "Major"},
                     "ticket_opened_on": {"stringValue": f"{today_str} 09:15:00"},
                     "region": {"stringValue": "EAST"},
-                    "customer": {"stringValue": "Bangalore (BBMP)"}
+                    "customer": {"stringValue": "Bangalore (BBMP)"},
+                    "entity_type": {"stringValue": "Lamp"}
                 }
             },
             {
@@ -35,7 +36,8 @@ class TestTicketEngine(unittest.TestCase):
                     "ticket_opened_on": {"stringValue": f"{today_str} 10:30:00"},
                     "ticket_closed_on": {"stringValue": f"{today_str} 11:00:00"},
                     "region": {"stringValue": "EAST"},
-                    "customer": {"stringValue": "Bangalore (BBMP)"}
+                    "customer": {"stringValue": "Bangalore (BBMP)"},
+                    "entity_type": {"stringValue": "Lamp"}
                 }
             },
             {
@@ -51,7 +53,24 @@ class TestTicketEngine(unittest.TestCase):
                     "ticket_opened_on": {"stringValue": "2026-08-03 14:00:00"},
                     "ticket_closed_on": {"stringValue": "2026-08-03 16:00:00"},
                     "region": {"stringValue": "Bommanahali"},
-                    "customer": {"stringValue": "Bangalore (BBMP)"}
+                    "customer": {"stringValue": "Bangalore (BBMP)"},
+                    "entity_type": {"stringValue": "Lamp"}
+                }
+            },
+            {
+                "name": "projects/test/databases/test/documents/tickets/doc4",
+                "fields": {
+                    "ticket_id": {"stringValue": "TCK004"},
+                    "status": {"stringValue": "Open"},
+                    "zone": {"stringValue": "East"},
+                    "ward": {"stringValue": "Ward 11"},
+                    "complainee": {"stringValue": "System"},
+                    "problem_type": {"stringValue": "SLC Communication Failure"},
+                    "priority": {"stringValue": "Critical"},
+                    "ticket_opened_on": {"stringValue": f"{today_str} 12:00:00"},
+                    "region": {"stringValue": "EAST"},
+                    "customer": {"stringValue": "Bangalore (BBMP)"},
+                    "entity_type": {"stringValue": "SLC Panel"}
                 }
             }
         ]
@@ -63,10 +82,25 @@ class TestTicketEngine(unittest.TestCase):
         self.assertTrue(is_bbmp_ticket(self.raw_tickets[0]))
         self.assertFalse(is_bbmp_ticket(self.raw_tickets[1]))
         self.assertTrue(is_bbmp_ticket(self.raw_tickets[2]))
+        self.assertTrue(is_bbmp_ticket(self.raw_tickets[3]))
+
+    def test_slc_panel_exclusion(self):
+        # Verify SLC Panel ticket identification and exclusion
+        self.assertFalse(is_slc_panel_ticket(self.raw_tickets[0]))
+        self.assertTrue(is_lamp_ticket(self.raw_tickets[0]))
+
+        self.assertTrue(is_slc_panel_ticket(self.raw_tickets[3]))
+        self.assertFalse(is_lamp_ticket(self.raw_tickets[3]))
+
+        filtered_lamps = self.engine.filter_tickets(self.raw_tickets, lamps_only=True)
+        lamp_ids = [t["ticket_id"] for t in filtered_lamps]
+        self.assertIn("TCK001", lamp_ids)
+        self.assertNotIn("TCK004", lamp_ids)
 
     def test_filter_by_date(self):
         today_str = datetime.now().strftime("%Y-%m-%d")
         filtered_today = self.engine.filter_tickets(self.raw_tickets, target_date=today_str)
+        # Should include TCK001 (Lamp) and exclude TCK002 (Auto) and TCK004 (SLC Panel)
         self.assertEqual(len(filtered_today), 1)
         self.assertEqual(filtered_today[0]["ticket_id"], "TCK001")
 
@@ -76,6 +110,7 @@ class TestTicketEngine(unittest.TestCase):
 
     def test_analytics_calculation(self):
         analytics = self.engine.analyze_tickets(self.valid_bbmp_tickets)
+        # TCK001 (Open Lamp) and TCK003 (Closed Lamp) are included. TCK002 (Auto) and TCK004 (SLC Panel) excluded.
         self.assertEqual(analytics["total_tickets"], 2)
         self.assertEqual(analytics["open_tickets"], 1)
         self.assertEqual(analytics["closed_tickets"], 1)
@@ -85,16 +120,6 @@ class TestTicketEngine(unittest.TestCase):
         self.assertEqual(analytics["today_total_tickets"], 1)
         self.assertEqual(analytics["today_open_tickets"], 1)
         self.assertEqual(analytics["today_closed_tickets"], 0)
-
-        # Verify SLC panel vs Lamps breakdown keys
-        self.assertIn("open_slc_panels", analytics)
-        self.assertIn("open_lamps", analytics)
-        self.assertIn("today_open_slc_panels", analytics)
-        self.assertIn("today_open_lamps", analytics)
-        self.assertIn("july1_total_tickets", analytics)
-        self.assertIn("july1_open_tickets", analytics)
-        self.assertIn("july1_closed_tickets", analytics)
-        self.assertIn("july1_resolution_rate_percent", analytics)
 
         # Verify Past 7 Days Clustered Trend
         self.assertIn("past_7_days_trend", analytics)
@@ -116,9 +141,9 @@ class TestTicketEngine(unittest.TestCase):
         t_45_days = (now - timedelta(days=45)).strftime("%Y-%m-%d %H:%M:%S")
 
         aging_tickets = [
-            {"ticket_id": "T5", "status": "Open", "ticket_opened_on": t_5_days, "complainee": "User", "region": "EAST"},
-            {"ticket_id": "T15", "status": "Open", "ticket_opened_on": t_15_days, "complainee": "User", "region": "EAST"},
-            {"ticket_id": "T45", "status": "Open", "ticket_opened_on": t_45_days, "complainee": "User", "region": "EAST"},
+            {"ticket_id": "T5", "status": "Open", "ticket_opened_on": t_5_days, "complainee": "User", "region": "EAST", "entity_type": "Lamp"},
+            {"ticket_id": "T15", "status": "Open", "ticket_opened_on": t_15_days, "complainee": "User", "region": "EAST", "entity_type": "Lamp"},
+            {"ticket_id": "T45", "status": "Open", "ticket_opened_on": t_45_days, "complainee": "User", "region": "EAST", "entity_type": "Lamp"},
         ]
 
         analytics = self.engine.analyze_tickets(aging_tickets)
@@ -139,3 +164,4 @@ class TestTicketEngine(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

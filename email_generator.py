@@ -169,8 +169,8 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                                     <tr>
                                         <td>
                                             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #818cf8; margin-bottom: 4px;">Schnell IoT Cloud Analytics</div>
-                                            <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">BBMP Smart Light Ticket Dashboard</h1>
-                                            <div style="font-size: 13px; color: #c7d2fe; margin-top: 6px;">Official Executive Daily Report &bull; Period: <strong>{date_label}</strong></div>
+                                            <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">BBMP Smart Light Lamp Ticket Dashboard</h1>
+                                            <div style="font-size: 13px; color: #c7d2fe; margin-top: 6px;">Official Executive Daily Report (Lamp Tickets Only) &bull; Period: <strong>{date_label}</strong></div>
                                         </td>
                                         <td align="right" valign="top">
                                             <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 12px; text-align: right; color: #ffffff; font-size: 11px;">
@@ -186,7 +186,7 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                         <!-- Exclusion Notice -->
                         <tr>
                             <td style="background-color: #eff6ff; padding: 10px 32px; border-bottom: 1px solid #dbeafe; color: #1e40af; font-size: 12px; font-weight: 600; text-align: center;">
-                                &#9432; Note: Automated tickets ("Auto") are excluded from all metrics to focus strictly on operational issues.
+                                &#9432; Note: SLC Panel tickets &amp; Automated tickets ("Auto") are excluded from all metrics to focus strictly on Lamp operational issues.
                             </td>
                         </tr>
 
@@ -194,7 +194,7 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                         <tr>
                             <td style="padding: 20px 32px 10px 32px; background-color: #ffffff;">
                                 <div style="font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                                    Tickets Summary (Raised From July 1st)
+                                    Lamp Tickets Summary (Raised From July 1st)
                                 </div>
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
@@ -212,7 +212,7 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                                             <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 10px; padding: 14px; text-align: center;">
                                                 <div style="font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.5px;">Open (From July 1)</div>
                                                 <div style="font-size: 22px; font-weight: 800; color: #e11d48; margin: 4px 0;">{july1_open}</div>
-                                                <div style="font-size: 10px; font-weight: 700; color: #9f1239;">{july1_open_slc} SLC Panels &bull; {july1_open_lamps} Lamps</div>
+                                                <div style="font-size: 10px; font-weight: 700; color: #9f1239;">{july1_open} Lamp Tickets</div>
                                             </div>
                                         </td>
 
@@ -258,7 +258,7 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                                             <div style="background: #ffffff; border: 1px solid #fecdd3; border-radius: 10px; padding: 14px; text-align: center;">
                                                 <div style="font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.5px;">Total Open</div>
                                                 <div style="font-size: 22px; font-weight: 800; color: #e11d48; margin: 4px 0;">{open_tickets}</div>
-                                                <div style="font-size: 10px; font-weight: 700; color: #9f1239;">{open_slc} SLC Panels &bull; {open_lamps} Lamps</div>
+                                                <div style="font-size: 10px; font-weight: 700; color: #9f1239;">{open_tickets} Lamp Tickets</div>
                                             </div>
                                         </td>
 

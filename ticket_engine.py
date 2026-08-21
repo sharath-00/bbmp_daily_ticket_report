@@ -112,6 +112,13 @@ def is_slc_panel_ticket(ticket: dict) -> bool:
         return True
     return False
 
+def is_lamp_ticket(ticket: dict) -> bool:
+    """
+    Returns True if the ticket is for a Lamp asset (i.e. NOT an SLC panel ticket).
+    """
+    return not is_slc_panel_ticket(ticket)
+
+
 class TicketEngine:
     def __init__(self, cache_file: str = "tickets_cache.json"):
         self._cached_tickets: List[dict] = []
@@ -253,14 +260,19 @@ class TicketEngine:
         region: Optional[str] = None,
         status: Optional[str] = None,
         bbmp_only: bool = True,
-        exclude_auto: bool = True
+        exclude_auto: bool = True,
+        lamps_only: bool = True
     ) -> List[dict]:
-        """Filter list of tickets by date/range, zone, complainee, region, status, BBMP project restriction, and Auto ticket exclusion."""
+        """Filter list of tickets by date/range, zone, complainee, region, status, BBMP project restriction, Auto ticket exclusion, and Lamp tickets restriction."""
         filtered = tickets
 
         # Exclude Auto tickets
         if exclude_auto:
             filtered = [t for t in filtered if str(t.get("complainee", "")).strip().lower() != "auto"]
+
+        # Strictly include Lamp tickets (exclude SLC panels)
+        if lamps_only:
+            filtered = [t for t in filtered if is_lamp_ticket(t)]
 
         # Apply strict BBMP Project Filter
         if bbmp_only:
@@ -334,12 +346,17 @@ class TicketEngine:
 
         return res
 
-    def analyze_tickets(self, tickets: List[dict], exclude_auto: bool = True, full_context_tickets: Optional[List[dict]] = None) -> dict:
-        """Perform analytics calculations on tickets list (ignoring Auto tickets by default)."""
+    def analyze_tickets(self, tickets: List[dict], exclude_auto: bool = True, lamps_only: bool = True, full_context_tickets: Optional[List[dict]] = None) -> dict:
+        """Perform analytics calculations on tickets list (ignoring Auto tickets and SLC panel tickets by default)."""
         if exclude_auto:
             tickets = [t for t in tickets if str(t.get("complainee", "")).strip().lower() != "auto"]
             if full_context_tickets:
                 full_context_tickets = [t for t in full_context_tickets if str(t.get("complainee", "")).strip().lower() != "auto"]
+
+        if lamps_only:
+            tickets = [t for t in tickets if is_lamp_ticket(t)]
+            if full_context_tickets:
+                full_context_tickets = [t for t in full_context_tickets if is_lamp_ticket(t)]
 
         trend_source_tickets = full_context_tickets if full_context_tickets is not None else tickets
 
