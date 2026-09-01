@@ -532,9 +532,25 @@ class TicketEngine:
         today_res_rate = round((today_closed_count / today_tickets_count * 100), 2) if today_tickets_count > 0 else 0.0
         july1_res_rate = round((july1_closed_count / july1_tickets_count * 100), 2) if july1_tickets_count > 0 else 0.0
 
+        # Full/Historical Complainee breakdown across all trend source tickets
+        full_complainee_breakdown: Dict[str, Dict[str, int]] = {}
+        for t in trend_source_tickets:
+            c = t.get("complainee", "Unknown") or "Unknown"
+            if c not in full_complainee_breakdown:
+                full_complainee_breakdown[c] = {"total": 0, "open": 0, "closed": 0, "other": 0}
+            full_complainee_breakdown[c]["total"] += 1
+            st_lower = (t.get("status", "Open") or "Open").lower()
+            if any(term in st_lower for term in ["closed", "resolved", "duplicate"]):
+                full_complainee_breakdown[c]["closed"] += 1
+            elif any(term in st_lower for term in ["open", "in progress", "pending", "assigned", "waiting"]):
+                full_complainee_breakdown[c]["open"] += 1
+            else:
+                full_complainee_breakdown[c]["other"] += 1
+
         # Sort breakdowns by total descending
         sorted_zones = dict(sorted(zone_breakdown.items(), key=lambda item: item[1]["total"], reverse=True))
         sorted_complainees = dict(sorted(complainee_breakdown.items(), key=lambda item: item[1]["total"], reverse=True))
+        sorted_full_complainees = dict(sorted(full_complainee_breakdown.items(), key=lambda item: item[1]["total"], reverse=True))
         sorted_problems = dict(sorted(problem_counts.items(), key=lambda item: item[1], reverse=True))
 
         return {
@@ -566,6 +582,7 @@ class TicketEngine:
             "status_breakdown": status_counts,
             "zone_breakdown": sorted_zones,
             "complainee_breakdown": sorted_complainees,
+            "full_complainee_breakdown": sorted_full_complainees,
             "problem_type_breakdown": sorted_problems,
             "priority_breakdown": priority_counts,
             "region_breakdown": region_counts,

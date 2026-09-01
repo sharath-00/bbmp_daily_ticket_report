@@ -49,8 +49,15 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
 
     zone_breakdown = analytics.get("zone_breakdown", {})
     complainee_breakdown = analytics.get("complainee_breakdown", {})
+    full_complainee_breakdown = analytics.get("full_complainee_breakdown", complainee_breakdown)
     problem_breakdown = analytics.get("problem_type_breakdown", {})
     
+    official_stats = full_complainee_breakdown.get("Officials", full_complainee_breakdown.get("Official", {}))
+    official_total = official_stats.get("total", 0)
+    official_open = official_stats.get("open", 0)
+    official_closed = official_stats.get("closed", 0)
+    official_closure_rate = round((official_closed / official_total * 100), 1) if official_total > 0 else 0.0
+
     generated_at = datetime.now().strftime("%B %d, %Y - %I:%M %p")
 
     # Render Zone Rows (Top 15 Zones)
@@ -307,6 +314,54 @@ def generate_html_email_report(analytics: Dict[str, Any], date_label: str = "Tod
                                                 <div style="font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">Unresolved > 30 Days (Critical)</div>
                                                 <div style="font-size: 24px; font-weight: 800; color: #dc2626; margin: 4px 0;">{u30_count} <span style="font-size: 13px; font-weight: 600;">Tickets</span></div>
                                                 <div style="font-size: 10px; color: #991b1b; font-weight: 700;">Critical Escalation Required (&gt; 30 Days Pending)</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+
+                        <!-- Sahaya App Tickets Summary (Official Complainees) -->
+                        <tr>
+                            <td style="padding: 16px 32px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <div style="font-size: 13px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                                    Sahaya App Tickets Summary
+                                </div>
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <!-- Official Total -->
+                                        <td width="25%" style="padding: 4px;">
+                                            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; text-align: center;">
+                                                <div style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Total Officials Tickets</div>
+                                                <div style="font-size: 22px; font-weight: 800; color: #1e1b4b; margin: 4px 0;">{official_total}</div>
+                                                <div style="font-size: 10px; color: #64748b;">All-Time Registered</div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Official Open -->
+                                        <td width="25%" style="padding: 4px;">
+                                            <div style="background: #ffffff; border: 1px solid #fecdd3; border-radius: 10px; padding: 14px; text-align: center;">
+                                                <div style="font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.5px;">Open Tickets</div>
+                                                <div style="font-size: 22px; font-weight: 800; color: #e11d48; margin: 4px 0;">{official_open}</div>
+                                                <div style="font-size: 10px; font-weight: 700; color: #9f1239;">Pending Resolution</div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Official Closed -->
+                                        <td width="25%" style="padding: 4px;">
+                                            <div style="background: #ffffff; border: 1px solid #a7f3d0; border-radius: 10px; padding: 14px; text-align: center;">
+                                                <div style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.5px;">Closed Tickets</div>
+                                                <div style="font-size: 22px; font-weight: 800; color: #16a34a; margin: 4px 0;">{official_closed}</div>
+                                                <div style="font-size: 10px; color: #065f46;">Total Resolved</div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Official Closure Rate -->
+                                        <td width="25%" style="padding: 4px;">
+                                            <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 14px; text-align: center;">
+                                                <div style="font-size: 10px; font-weight: 700; color: #4338ca; text-transform: uppercase; letter-spacing: 0.5px;">Closure Rate</div>
+                                                <div style="font-size: 22px; font-weight: 800; color: #3730a3; margin: 4px 0;">{official_closure_rate}%</div>
+                                                <div style="font-size: 10px; color: #4338ca;">Overall Closure Rate</div>
                                             </div>
                                         </td>
                                     </tr>
